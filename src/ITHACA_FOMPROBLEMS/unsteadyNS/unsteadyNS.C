@@ -23,7 +23,7 @@
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
   GNU Lesser General Public License for more details.
 
-  You should have received a copy of the GNU Lesser General Public License
+  You should have received a copy of the GNU Lesser General Publ  ic License
   along with ITHACA-FV. If not, see <http://www.gnu.org/licenses/>.
 
 \*---------------------------------------------------------------------------*/
@@ -36,21 +36,22 @@
 // * * * * * * * * * * * * * * * Constructors * * * * * * * * * * * * * * * * //
 
 // Construct Null
+//for initializing
 unsteadyNS::unsteadyNS() {}
 
 // Construct from zero
 unsteadyNS::unsteadyNS(int argc, char* argv[])
     :
-    UnsteadyProblem()
+    UnsteadyProblem()  //setTimes() and checkWrite()
 {
-    _args = autoPtr<argList>
+    _args = autoPtr<argList>  //create a new argList object, have _args() to query the parsed runtime arugments
             (
-                new argList(argc, argv)
+                new argList(argc, argv)  //construct an argList instance
             );
 
-    if (!_args->checkRootCase())
+    if (!_args->checkRootCase())  //if checkRootCase() returns false,then the directory setup isn't a proper case
     {
-        Foam::FatalError.exit();
+        Foam::FatalError.exit();  //then FatalError.exit() is called
     }
 
     argList& args = _args();
