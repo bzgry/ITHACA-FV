@@ -54,25 +54,25 @@ unsteadyNS::unsteadyNS(int argc, char* argv[])
         Foam::FatalError.exit();  //then FatalError.exit() is called
     }
 
-    argList& args = _args();
+    argList& args = _args();  //now we can use args. rahter than _args()->
 #include "createTime.H"
 #include "createMesh.H"
-    _pimple = autoPtr<pimpleControl>
+    _pimple = autoPtr<pimpleControl>  //call the pimpleControl constructor, passing in mesh
               (
                   new pimpleControl
                   (
                       mesh
                   )
               );
-    ITHACAdict = new IOdictionary
+    ITHACAdict = new IOdictionary  //construct an IOdictionary from IOobject
     (
         IOobject
         (
-            "ITHACAdict",
-            runTime.system(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
+            "ITHACAdict",  //the filename to look for
+            runTime.system(),  //point to system folder
+            mesh,  //associate it with mesh database so that any mesh-dependent lookups can be resolved correctly
+            IOobject::MUST_READ,  //use MUST_READ to ensure the solver will abort if ITHACAdict not present
+            IOobject::NO_WRITE  //dictionary is read-only
         )
     );
 #include "createFields.H"
