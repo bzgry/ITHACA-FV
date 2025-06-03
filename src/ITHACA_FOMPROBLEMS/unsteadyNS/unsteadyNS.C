@@ -77,11 +77,15 @@ unsteadyNS::unsteadyNS(int argc, char* argv[])
     );
 #include "createFields.H"
 #include "createFvOptions.H"
-    para = ITHACAparameters::getInstance(mesh, runTime);
+    para = ITHACAparameters::getInstance(mesh, runTime);  //ITHACAparameters is the class designed to hold all user-defined parameters
+    //if ITHACAparameters object doesn't exist in memory, then getInstance(mesh, runTime) will construct one by reading a dictionary
+    //using mesh and runTime context
     method = ITHACAdict->lookupOrDefault<word>("method", "supremizer");
+    //find a keyword called method in ITHACAdict, if exist, return a string, otherwise return "supremizer"
     M_Assert(method == "supremizer"
              || method == "PPE",
                        "The method must be set to supremizer or PPE in ITHACAdict");
+    //if method is neither supremizer nor PPE, then aborts and prints "The method must be set..."; otherwise, execution continues normally
     bcMethod = ITHACAdict->lookupOrDefault<word>("bcMethod", "lift");
     M_Assert(bcMethod == "lift" || bcMethod == "penalty",
              "The BC method must be set to lift or penalty in ITHACAdict");
@@ -93,14 +97,14 @@ unsteadyNS::unsteadyNS(int argc, char* argv[])
     M_Assert(timeDerivativeSchemeOrder == "first"
              || timeDerivativeSchemeOrder == "second",
                                           "The time derivative approximation must be set to either first or second order scheme in ITHACAdict");
-    offline = ITHACAutilities::check_off();
-    podex = ITHACAutilities::check_pod();
-    supex = ITHACAutilities::check_sup();
+    offline = ITHACAutilities::check_off();  //Check if the offline data folder "./ITHACAoutput/Offline" exists
+    podex = ITHACAutilities::check_pod();  //Check if the POD data folder "./ITHACAoutput/POD" exists
+    supex = ITHACAutilities::check_sup();  //Check if the supremizer folder exists
 }
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-void unsteadyNS::truthSolve(List<scalar> mu_now, fileName folder)
+void unsteadyNS::truthSolve(List<scalar> mu_now, fileName folder)  //mu_now is a vector of parameter values like Reynolds number, boundary condition coefficients, etc.
 {
     Time& runTime = _runTime();
     surfaceScalarField& phi = _phi();
