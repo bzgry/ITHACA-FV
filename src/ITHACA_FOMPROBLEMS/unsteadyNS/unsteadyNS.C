@@ -106,9 +106,9 @@ unsteadyNS::unsteadyNS(int argc, char* argv[])
 
 void unsteadyNS::truthSolve(List<scalar> mu_now, fileName folder)  //mu_now is a vector of parameter values like Reynolds number, boundary condition coefficients, etc.
 {
-    Time& runTime = _runTime();
-    surfaceScalarField& phi = _phi();
-    fvMesh& mesh = _mesh();
+    Time& runTime = _runTime();  //manages current time, delta t and writing directories
+    surfaceScalarField& phi = _phi();  //phi represents the volumetric flux on each face of control volumes
+    fvMesh& mesh = _mesh();  //use mesh to represent _mesh()
 #include "initContinuityErrs.H"
     fv::options& fvOptions = _fvOptions();
     pimpleControl& pimple = _pimple();
@@ -116,48 +116,48 @@ void unsteadyNS::truthSolve(List<scalar> mu_now, fileName folder)  //mu_now is a
     volVectorField& U = _U();
     IOMRFZoneList& MRF = _MRF();
     singlePhaseTransportModel& laminarTransport = _laminarTransport();
-    instantList Times = runTime.times();
+    instantList Times = runTime.times();  //instant is a scalar for physical time value, and runTime.times() reads and stores these instants
     runTime.setEndTime(finalTime);
     // Perform a TruthSolve
     runTime.setTime(Times[1], 1);
     runTime.setDeltaT(timeStep);
-    nextWrite = startTime;
+    nextWrite = startTime;  //nextWrite tracks the absolute time when we should export next field
 
     // Set time-dependent velocity BCs for initial condition
-    if (timedepbcMethod == "yes")
+    if (timedepbcMethod == "yes")  //set timedepbcMethod in ITHACAdict
     {
-        for (label i = 0; i < inletPatch.rows(); i++)
+        for (label i = 0; i < inletPatch.rows(); i++)  //number ofinlet pathces we defined
         {
             Vector<double> inl(0, 0, 0);
 
             for (label j = 0; j < inl.size(); j++)
             {
-                inl[j] = timeBCoff(i * inl.size() + j, 0);
+                inl[j] = timeBCoff(i * inl.size() + j, 0);  //compute which row holds the j-th component of patch i, pick column 0
             }
 
-            assignBC(U, inletPatch(i, 0), inl);
+            assignBC(U, inletPatch(i, 0), inl);  //wirte inl into BC for field U on that patch(i,0)
         }
     }
 
     // Export and store the initial conditions for velocity and pressure
-    ITHACAstream::exportSolution(U, name(counter), folder);
-    ITHACAstream::exportSolution(p, name(counter), folder);
+    ITHACAstream::exportSolution(U, name(counter), folder);  //write the field U or P into a new time-snapshot directory
+    ITHACAstream::exportSolution(p, name(counter), folder);  //counter=0,1,2,... to ensure U and P at the currrent physical time are saved in a uniquely named floder
     std::ofstream of(folder + name(counter) + "/" +
-                     runTime.timeName());
-    Ufield.append(U.clone());
+                     runTime.timeName());  //example: ./ITHACAoutput/Offline/0/0/0
+    Ufield.append(U.clone());  //U.clone() makes a deep copy of volVecotrField U at this moment
     Pfield.append(p.clone());
     counter++;
-    nextWrite += writeEvery;
+    nextWrite += writeEvery;  //writeEvery is the physical time of snapshots
 
     // Start the time loop
-    while (runTime.run())
+    while (runTime.run())  //read controls, update delta t, solve momentum+pressure, write snapshots until endTime
     {
 #include "readTimeControls.H"
 #include "CourantNo.H"
 #include "setDeltaT.H"
         runTime.setEndTime(finalTime);
-        runTime++;
-        Info << "Time = " << runTime.timeName() << nl << endl;
+        runTime++;  //timeIndex() plus 1, timeValue() += deltaT()
+        Info << "Time = " << runTime.timeName() << nl << endl;  //print physical time step
 
         // Set time-dependent velocity BCs
         if (timedepbcMethod == "yes")
@@ -168,35 +168,35 @@ void unsteadyNS::truthSolve(List<scalar> mu_now, fileName folder)  //mu_now is a
 
                 for (label j = 0; j < inl.size(); j++)
                 {
-                    inl[j] = timeBCoff(i * inl.size() + j, counter2);
+                    inl[j] = timeBCoff(i * inl.size() + j, counter2);  //counter2 is the column to pick up
                 }
 
                 assignBC(U, inletPatch(i, 0), inl);
             }
 
-            counter2 ++;
+            counter2 ++;  //for next iteration we pull the next-in-time column of timeBCoff
         }
 
         // --- Pressure-velocity PIMPLE corrector loop
-        while (pimple.loop())
+        while (pimple.loop())  //pimple.loop()=TRUE if the outer PIMPLE iteration count hasn't reached maximum
         {
-#include "UEqn.H"
+#include "UEqn.H"  //solve for provisional velocity
 
-            // --- Pressure corrector loop
-            while (pimple.correct())
+            // --- Pressure corrector loop, to enforce continuity
+            while (pimple.correct())  //pimple.correct()=TRUE if inner loop converges
             {
-#include "pEqn.H"
+#include "pEqn.H"  //build and solve a pressure Poisson-type eqation
             }
 
-            if (pimple.turbCorr())
+            if (pimple.turbCorr())  //update turbulence
             {
                 laminarTransport.correct();
                 turbulence->correct();
             }
         }
 
-        Info << "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
-             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
+        Info << "ExecutionTime = " << runTime.elapsedCpuTime() << " s"  //processor time during last time-step solve
+             << "  ClockTime = " << runTime.elapsedClockTime() << " s"  //real time since last time-step began
              << nl << endl;
 
         if (checkWrite(runTime))
@@ -210,22 +210,24 @@ void unsteadyNS::truthSolve(List<scalar> mu_now, fileName folder)  //mu_now is a
             writeMu(mu_now);
             // --- Fill in the mu_samples with parameters (time, mu) to be used for the PODI sample points
             mu_samples.conservativeResize(mu_samples.rows() + 1, mu_now.size() + 1);
+            //mu_samples each row records one snapshot's "physical time"(first column) and all parameter values(next columns)
+            //conservativeResize adds one more row to bottom
             mu_samples(mu_samples.rows() - 1, 0) = atof(runTime.timeName().c_str());
-
+            //the first entry in new row(column 0) is current time, convert from string to double
             for (label i = 0; i < mu_now.size(); i++)
             {
-                mu_samples(mu_samples.rows() - 1, i + 1) = mu_now[i];
+                mu_samples(mu_samples.rows() - 1, i + 1) = mu_now[i];  //have one row forevery time the solver wrote a snapshot
             }
         }
     }
 
     // Resize to Unitary if not initialized by user (i.e. non-parametric problem)
-    if (mu.cols() == 0)
+    if (mu.cols() == 0)  //never set up any parameter
     {
         mu.resize(1, 1);
     }
 
-    if (mu_samples.rows() == counter * mu.cols())
+    if (mu_samples.rows() == counter * mu.cols())  ..successfully collect exactly one row for every snapshot
     {
         ITHACAstream::exportMatrix(mu_samples, "mu_samples", "eigen",
                                    folder);
