@@ -67,13 +67,13 @@ int main(int argc, char *argv[])  //argc is the number of arguments, argv is the
 
     PtrList<volVectorField> Vfield;  //a list of pinters to objects of type <volVectorField>
     PtrList<volScalarField> Sfield;  //Sfield will hold in-memory clones of each snapshot we read, so does Vfield
-    PtrList<volVectorField> Vmodes;  //Vmodes will store the resulting POD modes returne by ITHACAPOD::getModes()
+    PtrList<volVectorField> Vmodes;  //Vmodes will store the resulting POD modes returned by ITHACAPOD::getModes()
     PtrList<volScalarField> Smodes;  //same as Vmodes
 
     ITHACAparameters* para = ITHACAparameters::getInstance(mesh,
                              runTime);
-    //pointer para ponits to the type of data which is ITHACAparamet ers.
-    //for right side, get getInstance from ITHACAparameters, passing in CFD mesh and the simulation runTime to read relevant information
+    //pointer para ponits to the type of data which is ITHACAparameters.
+    //for right side, get getInstance from ITHACAparameters, passing in mesh and the simulation runTime to read relevant information
 
     bool pod_exist;  //declares a plain C++ Boolean variable
     struct stat sb;  //stat is a POSIX system call that fills in a struct stat with information about a file or directory
