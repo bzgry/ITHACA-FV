@@ -216,7 +216,7 @@ void unsteadyNS::truthSolve(List<scalar> mu_now, fileName folder)  //mu_now is a
             //the first entry in new row(column 0) is current time, convert from string to double
             for (label i = 0; i < mu_now.size(); i++)
             {
-                mu_samples(mu_samples.rows() - 1, i + 1) = mu_now[i];  //have one row forevery time the solver wrote a snapshot
+                mu_samples(mu_samples.rows() - 1, i + 1) = mu_now[i];  //have one row for every time the solver wrote a snapshot
             }
         }
     }
